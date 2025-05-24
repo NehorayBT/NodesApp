@@ -7,7 +7,7 @@ public class NodesApp extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        Director director = new Director(primaryStage);
+        new Director(primaryStage);
     }
 
     public static void main(String[] args) {

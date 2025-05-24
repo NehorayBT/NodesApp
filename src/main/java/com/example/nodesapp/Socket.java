@@ -1,13 +1,12 @@
 package com.example.nodesapp;
 
+import com.example.nodesapp.FN.FunctionNode;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.NumberBinding;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.scene.Node;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
@@ -15,62 +14,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Class representing input/output socket on a node
-public class Socket extends BorderPane {
+public class Socket<T> extends HBox {
     private Circle circle;      // drawing circle for UI of socket
     private String name;        // name of the socket (this will actually be the title)
     private boolean isInput;    // is this socket input or output
-    private SocketValue value;
-    private List<Connection> connections = new ArrayList<>();   // connections that connect to this socket
+    private T value;
+    private T defaultValue;
+    private List<Connection<T>> connections = new ArrayList<>();   // connections that connect to this socket
 
     private Director director;  // we just keep it here for convenience
 
     // name: title of this socket
     // initValue: initial value of the socket (the default value)
     // isInput: is this socket an input socket or an output socket
-    public Socket(String name, SocketValue initValue, boolean isInput) {
+    public Socket(String name, T value, T defaultValue, boolean isInput) {
         // init fields
         this.name = name;
-        this.value = initValue;
+        this.value = value;
+        this.defaultValue = defaultValue;
         this.isInput = isInput;
         this.director = Director.getInstance();
+
         // init drawing
         this.drawSocket();
+
         // set mouse events
         this.setMouseEvents();
     }
 
-    // finds the socket that is lying underneath the mouse on an event
-    // event: the mouse event that we want to extract the mouse position from
-    public Socket pickSocket(MouseEvent event) {
-        Point2D scenePoint = new Point2D(event.getSceneX(), event.getSceneY());
-
-        // This gets the top-most node (in the scene) at the given coordinates (we hope this will be a func node)
-        Node targetNode = this.director.getScene().getRoot().getChildrenUnmodifiable().stream()
-                .filter(node -> node.getBoundsInParent().contains(scenePoint))
-                .findFirst()
-                .orElse(null);
-        // if the node we found is a func-node
-        if(targetNode instanceof FunctionNode) {
-            // this gets the top-most node in the func-node (if we're inside a function node)
-            // we hope this will be a socket
-            Point2D newScenePoint = new Point2D(scenePoint.getX() - targetNode.getLayoutX(), scenePoint.getY() - targetNode.getLayoutY());
-            targetNode = ((FunctionNode) targetNode).getChildrenUnmodifiable().stream()
-                    .filter(node -> node.getBoundsInParent().contains(newScenePoint))
-                    .findFirst()
-                    .orElse(null);
-            // if the node we found is a socket
-            if(targetNode instanceof Socket) {
-                // return this socket
-                return (Socket) targetNode;
-            }
-        }
-        // if socket not found, return null
-        return null;
+    public Socket(String name, T value, boolean isInput) {
+        this(name, value, value, isInput);
     }
 
     // set mouse event for this sockets
     private void setMouseEvents() {
-
         // if this socket is pressed, try to enter connection-creation state
         circle.setOnMousePressed(event -> {
             this.director.getConnectionManager().startConnectionModifyingStateFromSocket(this);
@@ -78,10 +55,8 @@ public class Socket extends BorderPane {
         });
         // if the mouse is released after dragging from this socket to some other point
         circle.setOnMouseReleased(event -> {
-            // point of mouse event
-            Point2D scenePoint = new Point2D(event.getSceneX(), event.getSceneY());
-            // find socket below mouse (returns null if no socket found)
-            Socket targetSocket = pickSocket(event);
+            // getting scene-node under mouse if it's a socket
+            Socket<?> targetSocket = (event.getPickResult().getIntersectedNode() instanceof Circle) ? ((Socket<?>)(((Circle) event.getPickResult().getIntersectedNode()).getParent())) : null;
             // if it's not null (a socket was found)
             if(targetSocket != null) {
                 // end connection-creation state, and connect currentConnection to the socket we found
@@ -99,35 +74,103 @@ public class Socket extends BorderPane {
     // handles UI-styling for this socket
     private void drawSocket() {
         // Create the visual socket
-        circle = new Circle(6);
+        circle = new Circle(5);
         circle.setFill(isInput ? Color.LIGHTBLUE : Color.LIGHTGREEN);
-        circle.setStroke(Color.WHITE);
+        circle.setStroke(Color.web("#2D2D2D"));
 
+        // create the label for this socket
         Label label = new Label(name);
+        label.setPadding(new Insets(0, 10, 0, 10));
         label.setStyle("-fx-text-fill: white;");
 
         // Layout based on input/output
         if (isInput) {
-            setLeft(circle);
-            setRight(label);
+            this.getChildren().addAll(circle, label);
+            this.setAlignment(Pos.CENTER_LEFT);
         } else {
-            setLeft(label);
-            setRight(circle);
+            this.getChildren().addAll(label, circle);
+            this.setAlignment(Pos.CENTER_RIGHT);
         }
 
         setPadding(new Insets(5));
     }
 
+    // call this function to propagate socket's output to all input-sockets it's connected to
+    public void propagateOutput() {
+        if(!this.isInput) {
+            for (Connection<T> conn : this.connections) {
+                this.propagateOutputToConnection(conn);
+            }
+        } else {
+            //System.out.println("updated values of: " + ((FunctionNode)this.getParent()).name);
+            ((FunctionNode) this.getParent()).updateSocketValues();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    // call this function to propagate socket's output to specific connection
+    // conn: the connection to propagate output into
+    public void propagateOutputToConnection(Connection<T> conn) {
+        if(!this.isInput) {
+            Socket<T> inputSocket = (Socket<T>) conn.getInputSocket();
+            if(inputSocket != null) {
+                //System.out.println("propagated from: " + ((FunctionNode)this.getParent()).name + "to: " + ((FunctionNode)((Socket<T>) conn.getInputSocket()).getParent()).name);
+                ((Socket<T>) conn.getInputSocket()).setValue(this.value);
+            }
+        }
+    }
+
+    @SuppressWarnings("all")
+    public boolean checkSocketSameType(Socket<?> socket) {
+        try {
+            socket = (Socket<T>) socket;
+            return true;
+        } catch(Exception e) {
+
+        }
+        return false;
+    }
+
     // add a connection to this socket (meaning a connection that connects to this socket)
     // conn: the connection to add to this socket
-    public void addConnection(Connection conn) {
-        if (!this.connections.contains(conn)) this.connections.add(conn);
+    public void addConnection(Connection<T> conn) {
+        if (!this.connections.contains(conn)) {
+            this.connections.add(conn);
+        }
+    }
+
+    @SuppressWarnings("all")
+    public void addConnectionIfTypeMatches(Connection<?> conn) {
+        if(conn.matchingSocketType(this)) {
+            this.addConnection((Connection<T>) conn);
+        }
     }
 
     // remove a connection from this socket
     // conn: the connection to remove from this socket
-    public void removeConnection(Connection conn) {
+    public void removeConnection(Connection<T> conn) {
         this.connections.remove(conn);
+        if(this.isInput) {
+            this.setValue(defaultValue);
+        }
+    }
+
+    @SuppressWarnings("all")
+    public void removeConnectionIfTypeMatches(Connection<?> conn) {
+        if(conn.matchingSocketType(this)) {
+            this.removeConnection((Connection<T>) conn);
+        }
+    }
+
+    public Connection<T> createConnectionFromThis() {
+        return new Connection<T>(this);
+    }
+
+    public void terminate() {
+        List<Connection<T>> connList = new ArrayList<>(this.connections);
+        for(Connection<T> conn : connList) {
+            this.director.getConnectionManager().removeConnection(conn);
+        }
     }
 
     // ###########################
@@ -178,19 +221,28 @@ public class Socket extends BorderPane {
         return sumY;
     }
 
-    public SocketValue getValue() {
+    public T getValue() {
         return value;
     }
 
-    public void setValue(SocketValue value) {
+    public void setValue(T value) {
         this.value = value;
+        this.propagateOutput();
     }
 
-    public List<Connection> getConnections() {
+    public T getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(T defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public List<Connection<T>> getConnections() {
         return connections;
     }
 
-    public void setConnections(List<Connection> connections) {
+    public void setConnections(List<Connection<T>> connections) {
         this.connections = connections;
     }
 }

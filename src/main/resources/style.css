@@ -1,0 +1,61 @@
+/* Background of the context menu */
+.context-menu {
+    -fx-background-color: #2D2D2D;
+    -fx-background-radius: 5;
+}
+
+/* Each menu item’s background when idle */
+.menu-item {
+    -fx-background-color: transparent;
+}
+
+/* Hover effect */
+.menu-item:focused {
+    -fx-background-color: #3A3A3A;
+}
+
+/* Text color */
+.menu-item .label {
+    -fx-text-fill: white;
+}
+
+/* Optional: submenus (menus inside menus) */
+.menu {
+    -fx-background-color: #2D2D2D;
+}
+.menu .label {
+    -fx-text-fill: white;
+}
+
+.separator-menu-item {
+    -fx-background-color: transparent;  /* Make the background transparent */
+    -fx-border-color: #707070;          /* Light gray border color */
+    -fx-border-width: 0 0 1px 0;        /* Border only at the bottom */
+    -fx-border-style: solid;            /* Solid line */
+    -fx-padding: 0;                     /* Remove any padding */
+    -fx-opacity: 0.5;                   /* Lower opacity for subtle effect */
+}
+
+.radio-button {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-padding: 2 4 2 4;
+}
+
+.radio-button .radio {
+    -fx-background-color: #333;
+    -fx-border-color: #777;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 50%;
+    -fx-background-radius: 50%;
+    -fx-padding: 0;
+    -fx-min-width: 10px;
+    -fx-min-height: 10px;
+    -fx-max-width: 10px;
+    -fx-max-height: 10px;
+}
+
+.radio-button:selected .radio {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #ffffff;
+}

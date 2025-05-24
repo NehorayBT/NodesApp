@@ -8,25 +8,23 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.CubicCurve;
 
 // Class representing a connection between sockets
-public class Connection extends CubicCurve {
-    private Socket inputSocket;     // the input socket connected to the connection
-    private Socket outputSocket;    // the output socket connected to the connection
+public class Connection<T> extends CubicCurve {
+    private Socket<T> inputSocket;     // the input socket connected to the connection
+    private Socket<T> outputSocket;    // the output socket connected to the connection
     private boolean isStartPointInput;  // is the input-socket the starting point of the line or not
 
     // socket: socket to connect this connection to
-    public Connection(Socket socket) {
+    public Connection(Socket<T> socket) {
         // setting fields according to socket being input/output
         if(socket.isInput()) {
-            this.inputSocket = socket;
+            this.setInputSocket(socket);
             this.isStartPointInput = true;
         } else {
-            this.outputSocket = socket;
+            this.setOutputSocket(socket);
             this.isStartPointInput = false;
         }
         // binding the start point of the line to the sockets position
         this.bindStartPointToSocket(socket);
-        // setting up listeners that takes this connection to the front of canvas on change of position
-        this.setPositionListeners();
         // initializing apperance of the line
         initAppearance();
         // disabling clickable (to not mess up clicking on sockets)
@@ -35,15 +33,18 @@ public class Connection extends CubicCurve {
         setMouseEvents();
 
         bindControlPoints();
+        this.setViewOrder(10);
     }
 
     // binding the control points of the Bazier curve, to be affected by the start/end points
     // this is for visual aesthetics
     private void bindControlPoints() {
+
         this.controlX1Property().bind(Bindings.createDoubleBinding(() ->
                         this.startXProperty().get() + (this.endXProperty().get() - this.startXProperty().get()) / 3,
                 this.startXProperty(), this.endXProperty()
         ));
+
         this.controlX2Property().bind(Bindings.createDoubleBinding(() ->
                         this.endXProperty().get() + (this.startXProperty().get() - this.endXProperty().get()) / 3,
                 this.startXProperty(), this.endXProperty()
@@ -53,25 +54,14 @@ public class Connection extends CubicCurve {
         this.controlY2Property().bind(this.endYProperty());
     }
 
-    // setting up position listeners that brings connection to front of canvas on change of position
-    private void setPositionListeners() {
-        ChangeListener<Number> listener = (obs, oldVal, newVal) ->
-                this.toFront();
-
-        startXProperty().addListener(listener);
-        startYProperty().addListener(listener);
-        endXProperty().addListener(listener);
-        endYProperty().addListener(listener);
-    }
-
     // detaching the socket connected to the start point of the curve
     private void detachStartPointSocket() {
         if(!this.isStartPointInput && this.outputSocket != null) {
             this.outputSocket.removeConnection(this);
-            this.outputSocket = null;
+            this.setOutputSocket(null);
         } else if (this.inputSocket != null){
             this.inputSocket.removeConnection(this);
-            this.inputSocket = null;
+            this.setInputSocket(null);
         }
     }
 
@@ -79,15 +69,16 @@ public class Connection extends CubicCurve {
     private void detachEndPointSocket() {
         if(this.isStartPointInput && this.outputSocket != null) {
             this.outputSocket.removeConnection(this);
-            this.outputSocket = null;
+            this.setOutputSocket(null);
         } else if (this.inputSocket != null) {
             this.inputSocket.removeConnection(this);
-            this.inputSocket = null;
+            this.setInputSocket(null);
         }
     }
 
     // setting mouse events
     private void setMouseEvents() {
+
         // handling hovering styling
         this.setOnMouseEntered(event -> {
             this.setStroke(Color.WHITE);
@@ -98,6 +89,7 @@ public class Connection extends CubicCurve {
         this.setOnMouseExited(event -> {
             initAppearance();
         });
+
         // handling detaching of connection from socket on mouse press
         this.setOnMousePressed(event -> {
             // finding out if mouse pressed closer to startPoint/endPoint
@@ -131,14 +123,14 @@ public class Connection extends CubicCurve {
 
     // binding the curve's start point position to the given socket's position
     // socket: the socket we want to bind to
-    public void bindStartPointToSocket(Socket socket) {
+    public void bindStartPointToSocket(Socket<?> socket) {
         startXProperty().bind(socket.getSocketXproperty());
         startYProperty().bind(socket.getSocketYproperty());
     }
 
     // binding the curve's end point position to the given socket's position
     // socket: the socket we want to bind to
-    public void bindEndPointToSocket(Socket socket) {
+    public void bindEndPointToSocket(Socket<?> socket) {
         endXProperty().bind(socket.getSocketXproperty());
         endYProperty().bind(socket.getSocketYproperty());
     }
@@ -146,7 +138,7 @@ public class Connection extends CubicCurve {
     // binding the position of thepoint (start/end of curve) that is loose (not connected to a socket)
     // to the position of the given socket
     // socket: the socket we want to bind to
-    public void bindLoosePointToSocket(Socket socket) {
+    public void bindLoosePointToSocket(Socket<?> socket) {
         if((this.isStartPointInput && this.inputSocket == null) || (!this.isStartPointInput && this.inputSocket != null) ) {
             this.bindStartPointToSocket(socket);
         } else {
@@ -174,9 +166,9 @@ public class Connection extends CubicCurve {
     // and the second side is still loose, this checks if the existing socket
     // can connect to the given socket, with all sorts of checks described inside the function.
     // socket: the socket that we want to check if its valid to connect this connection to
-    public boolean checkValidSecondSocket(Socket socket) {
+    public boolean checkValidSecondSocket(Socket<?> socket) {
         // getting socket on first side of connection
-        Socket existingSocket = this.inputSocket != null ? this.inputSocket : this.outputSocket;
+        Socket<?> existingSocket = this.inputSocket != null ? this.inputSocket : this.outputSocket;
 
         // make sure we connect input<->output and not output<->output or input<->input
         boolean input2output = existingSocket.isInput() != socket.isInput();
@@ -185,7 +177,7 @@ public class Connection extends CubicCurve {
         boolean differentFuncNodes = existingSocket.getParent() != socket.getParent();
         // making sure a connection with same input/output does not already exist
         boolean connectionIsUnique = true;
-        for (Connection conn : Director.getInstance().getConnectionManager().connections) {
+        for (Connection<?> conn : Director.getInstance().getConnectionManager().connections) {
 
             if ((conn.getInputSocket() == this.getExistingSocket() && conn.getOutputSocket() == socket) ||
                     (conn.getInputSocket() == socket && conn.getOutputSocket() == this.getExistingSocket())) {
@@ -198,44 +190,77 @@ public class Connection extends CubicCurve {
         return input2output && differentFuncNodes && connectionIsUnique;
     }
 
+
     // ###########################
     // ### getters and setters ###
     // ###########################
 
-    public Socket getInputSocket() {
+    public Socket<?> getInputSocket() {
         return inputSocket;
     }
 
-    public void setInputSocket(Socket inputSocket) {
-        this.inputSocket = inputSocket;
+    public void setInputSocket(Socket<T> inputSocket) {
+        if(inputSocket != null) {
+            this.inputSocket = inputSocket;
+            this.inputSocket.addConnection(this);
+        } else {
+            this.inputSocket.removeConnection(this);
+            this.inputSocket = null;
+        }
+        if(this.outputSocket != null) {
+            this.outputSocket.propagateOutput();
+        }
     }
 
-    public Socket getOutputSocket() {
+    public Socket<?> getOutputSocket() {
         return outputSocket;
     }
 
-    public void setOutputSocket(Socket outputSocket) {
-        this.outputSocket = outputSocket;
+    public void setOutputSocket(Socket<T> outputSocket) {
+        if(outputSocket != null) {
+            this.outputSocket = outputSocket;
+            this.outputSocket.addConnection(this);
+        } else {
+            this.outputSocket.removeConnection(this);
+            this.outputSocket = null;
+        }
     }
 
     public void setEndPoint(double x, double y) {
         setEndX(x);
         setEndY(y);
-        this.toFront();
     }
 
-    public Socket getExistingSocket() {
+    public Socket<?> getExistingSocket() {
         if (this.inputSocket != null) {
             return this.inputSocket;
         }
         return this.outputSocket;
     }
 
-    public void setMissingSocket(Socket socket) {
-        if (this.inputSocket == null) {
-            this.inputSocket = socket;
-        } else {
-            this.outputSocket = socket;
+    @SuppressWarnings("all")
+    public boolean matchingSocketType(Socket<?> socket) {
+        try {
+            socket = (Socket<T>) socket;
+        } catch(Exception e) {
+            return false;
         }
+        return true;
+    }
+
+    @SuppressWarnings("all")
+    public void setMissingSocketIfTypeMatches(Socket<?> socket) {
+        if(this.matchingSocketType(socket)) {
+            this.setMissingSocket((Socket<T>)socket);
+        }
+    }
+
+    public void setMissingSocket(Socket<T> socket) {
+        if (this.inputSocket == null) {
+            this.setInputSocket(socket);
+        } else {
+            this.setOutputSocket(socket);
+        }
+        this.outputSocket.propagateOutput();
     }
 }
