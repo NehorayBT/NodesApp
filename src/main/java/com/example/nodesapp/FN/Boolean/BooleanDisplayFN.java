@@ -1,22 +1,23 @@
-package com.example.nodesapp.FN;
+package com.example.nodesapp.FN.Boolean;
 
+import com.example.nodesapp.FN.FunctionNode;
 import com.example.nodesapp.Socket;
 import com.example.nodesapp.TextFieldUI;
 
-public class NumberDisplayFN extends FunctionNode {
+public class BooleanDisplayFN extends FunctionNode {
 
-    private Socket<Double> input;
+    private Socket<Boolean> input;
     private TextFieldUI textField;
 
-    public NumberDisplayFN(double x, double y){
+    public BooleanDisplayFN(double x, double y){
         super(x, y);
-        this.name.set("Number display");
+        this.name.set("Boolean display");
         this.updateSocketValues();
     }
 
     @Override
     protected void initSockets() {
-        this.input = new Socket<>("Value", 0.0, true);
+        this.input = new Socket<>("Value", true, true);
         this.addSocket(this.input);
     }
 
@@ -28,7 +29,6 @@ public class NumberDisplayFN extends FunctionNode {
     @Override
     protected void initElements() {
         this.textField = new TextFieldUI();
-        this.textField.setDecimalOnly(true);
 
         this.addElement(this.textField);
     }

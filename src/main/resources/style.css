@@ -59,3 +59,23 @@
     -fx-background-color: #ffffff;
     -fx-border-color: #ffffff;
 }
+
+.button {
+    -fx-background-color: #595959;
+    -fx-text-fill: white;
+    -fx-background-radius: 3;
+    -fx-border-width: 0;
+      -fx-border-color: transparent;
+}
+
+.button:hover {
+    -fx-background-color: #7d7d7d;
+}
+
+.button:pressed {
+    -fx-background-color: #4d4b4b;
+}
+
+.label {
+    -fx-text-fill: white;
+}

@@ -1,13 +1,13 @@
-package com.example.nodesapp.FN;
+package com.example.nodesapp.FN.Boolean;
 
+import com.example.nodesapp.FN.FunctionNode;
 import com.example.nodesapp.Socket;
-import com.example.nodesapp.TextFieldUI;
 import javafx.geometry.Insets;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 
-public class BooleanConstantFN extends FunctionNode{
+public class BooleanConstantFN extends FunctionNode {
 
     private Socket<Boolean> output;
 
@@ -23,7 +23,7 @@ public class BooleanConstantFN extends FunctionNode{
 
     @Override
     protected void initSockets() {
-        this.output = new Socket<>("Value", true, false);
+        this.output = new Socket<>("Value", false, false);
         this.addSocket(this.output);
     }
 
@@ -50,9 +50,9 @@ public class BooleanConstantFN extends FunctionNode{
         hBox.getChildren().addAll(this.trueButton, this.falseButton);
 
         this.addElement(hBox);
-
-//        this.addElement(trueButton);
-//        this.addElement(falseButton);
+        this.trueButton.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            this.updateSocketValues();
+        });
     }
 
     @Override

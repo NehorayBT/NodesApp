@@ -1,5 +1,6 @@
-package com.example.nodesapp.FN;
+package com.example.nodesapp.FN.Numerical;
 
+import com.example.nodesapp.FN.FunctionNode;
 import com.example.nodesapp.Socket;
 import com.example.nodesapp.TextFieldUI;
 

@@ -102,7 +102,6 @@ public class Socket<T> extends HBox {
                 this.propagateOutputToConnection(conn);
             }
         } else {
-            //System.out.println("updated values of: " + ((FunctionNode)this.getParent()).name);
             ((FunctionNode) this.getParent()).updateSocketValues();
         }
     }
@@ -114,7 +113,6 @@ public class Socket<T> extends HBox {
         if(!this.isInput) {
             Socket<T> inputSocket = (Socket<T>) conn.getInputSocket();
             if(inputSocket != null) {
-                //System.out.println("propagated from: " + ((FunctionNode)this.getParent()).name + "to: " + ((FunctionNode)((Socket<T>) conn.getInputSocket()).getParent()).name);
                 ((Socket<T>) conn.getInputSocket()).setValue(this.value);
             }
         }

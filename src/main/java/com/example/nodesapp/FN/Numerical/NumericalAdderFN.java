@@ -1,16 +1,17 @@
-package com.example.nodesapp.FN;
+package com.example.nodesapp.FN.Numerical;
 
+import com.example.nodesapp.FN.FunctionNode;
 import com.example.nodesapp.Socket;
 
-public class AdderFN extends FunctionNode {
+public class NumericalAdderFN extends FunctionNode {
 
     Socket<Double> inputA;     // input
     Socket<Double> inputB;     // input
     Socket<Double> result;     // output
 
-    public AdderFN(double x, double y) {
+    public NumericalAdderFN(double x, double y) {
         super(x, y);
-        this.name.set("Adder");
+        this.name.set("Numerical Adder");
     }
 
     @Override
