@@ -45,8 +45,8 @@ public class AddNodesMenu extends ContextMenu {
 
         // numerical
         numericalAdderItem.setOnAction(e -> addNodeAndSetPosition(new NumericalAdderFN(0, 0)));
-        numericalConstantItem.setOnAction(e -> addNodeAndSetPosition(new NumberConstantFN(0, 0)));
-        numericalDisplayItem.setOnAction(e -> addNodeAndSetPosition(new NumberDisplayFN(0, 0)));
+        numericalConstantItem.setOnAction(e -> addNodeAndSetPosition(new NumericalConstantFN(0, 0)));
+        numericalDisplayItem.setOnAction(e -> addNodeAndSetPosition(new NumericalDisplayFN(0, 0)));
         numericalSubtractorItem.setOnAction(e -> addNodeAndSetPosition(new NumericalSubtractorFN(0, 0)));
         numericalMultiplierItem.setOnAction(e -> addNodeAndSetPosition(new NumericalMultiplierFN(0, 0)));
         numericalDividerItem.setOnAction(e -> addNodeAndSetPosition(new NumericalDividerFN(0, 0)));

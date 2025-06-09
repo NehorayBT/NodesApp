@@ -49,7 +49,7 @@ public abstract class FunctionNode extends VBox { // all of this node's output s
     protected void drawNode() {
         // Node styling
         this.setMinWidth(150);
-        this.setMaxWidth(220);
+        this.setMaxWidth(300);
         this.setStyle("-fx-background-color: #2D2D2D; -fx-background-radius: 5;");
 
         // Title bar with color
